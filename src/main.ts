@@ -8,7 +8,7 @@ async function bootstrap() {
   app.useGlobalPipes(new ValidationPipe());
   await app.listen(process.env.PORT || 3000);
   admin.initializeApp({
-    credential: admin.credential.cert('/Users/arturgilmanov/WebstormProjects/picksell-test/push-test/push-test-37865-firebase-adminsdk-g56m2-072dca42b4.json')
+    credential: admin.credential.cert(process.env.FIREBASE_CREDENTIALS_PATH)
   })
 }
 bootstrap();

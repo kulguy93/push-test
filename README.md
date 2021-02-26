@@ -1,6 +1,16 @@
+#Push test service
+
 ## Description
 
 A simple push service via Firebase Messaging API.
+
+## Configuration
+### Required env variables
+* DB_URL - URL for postgres connection. Example: postgres://login:password@host:port/database
+* FIREBASE_CREDENTIALS_PATH - absolute path for firebase credentials JSON (private_key, client_id, client_email etc.). You should download the file from Firebase Console before running this service
+
+### Optional env variables
+* PORT - set this to use different port for running the service
 
 ## Installation
 
@@ -19,6 +29,12 @@ $ npm run start:dev
 
 # production mode
 $ npm run start:prod
+```
+
+## Build the docker container for an app
+```bash
+$ npm run build
+$ docker build -t push-test-service
 ```
 
 ## Test

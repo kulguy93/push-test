@@ -1,7 +1,9 @@
 import { Controller, Get, Post, Body, Put, Param, Delete } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { DeviceTokenService } from './device-token.service';
 import { CreateDeviceTokenDto } from './dto/create-device-token.dto';
 
+@ApiTags('device-token')
 @Controller('device-token')
 export class DeviceTokenController {
   constructor(private readonly deviceTokenService: DeviceTokenService) {}

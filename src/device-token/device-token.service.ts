@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
 import { CreateDeviceTokenDto } from './dto/create-device-token.dto';
 import { In, Repository } from "typeorm";
 import { InjectRepository } from "@nestjs/typeorm";
@@ -10,9 +10,13 @@ export class DeviceTokenService {
   }
 
   async create(createDeviceTokenDto: CreateDeviceTokenDto): Promise<DeviceToken> {
-    const deviceToken = new DeviceToken();
-    deviceToken.token = createDeviceTokenDto.token;
-    return this.deviceTokenRepository.save(deviceToken);
+      const deviceToken = new DeviceToken();
+      deviceToken.token = createDeviceTokenDto.token;
+      return this.deviceTokenRepository.save(deviceToken).catch((e) => {
+        throw new HttpException({
+          message: e.message
+        }, HttpStatus.BAD_REQUEST);
+      });
   }
 
   findAll(limit: number = 1000, offset: number = 0, tokensArray?: string[]): Promise<[DeviceToken[], number]> {

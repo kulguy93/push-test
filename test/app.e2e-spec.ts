@@ -101,7 +101,7 @@ describe("Push test (e2e)", () => {
   });
   it("DELETE /device-token/:id", () => {
     return request(app.getHttpServer())
-      .delete("/device-token/1")
+      .delete(`/device-token/${id}`)
       .set("Authorization", `Bearer ${process.env.API_KEY}`)
       .expect(200);
   });

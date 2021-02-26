@@ -4,6 +4,10 @@
 
 A simple push service via Firebase Messaging API.
 
+## API Reference
+Please visit /api route on running service to get Swagger documentation
+E.g. localhost:3000/api
+
 ## Configuration
 Before running the app you should set these environment variables
 ### Required env variables

@@ -1,12 +1,16 @@
-import { Controller, Get, Post, Body, Put, Param, Delete } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
-import { DeviceTokenService } from './device-token.service';
-import { CreateDeviceTokenDto } from './dto/create-device-token.dto';
+import { Body, Controller, Delete, Get, Param, Post, UseGuards } from "@nestjs/common";
+import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
+import { DeviceTokenService } from "./device-token.service";
+import { CreateDeviceTokenDto } from "./dto/create-device-token.dto";
+import { AuthGuard } from "../auth.guard";
 
-@ApiTags('device-token')
-@Controller('device-token')
+@ApiTags("device-token")
+@ApiBearerAuth()
+@Controller("device-token")
+@UseGuards(AuthGuard)
 export class DeviceTokenController {
-  constructor(private readonly deviceTokenService: DeviceTokenService) {}
+  constructor(private readonly deviceTokenService: DeviceTokenService) {
+  }
 
   @Post()
   create(@Body() createDeviceTokenDto: CreateDeviceTokenDto) {

@@ -5,6 +5,7 @@
 A simple push service via Firebase Messaging API.
 
 ## Configuration
+Before running the app you should set these environment variables
 ### Required env variables
 * DB_URL - URL for postgres connection. Example: postgres://login:password@host:port/database
 * FIREBASE_CREDENTIALS_PATH - absolute path for firebase credentials JSON (private_key, client_id, client_email etc.). You should download the file from Firebase Console before running this service

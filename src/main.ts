@@ -3,20 +3,24 @@ import { AppModule } from "./app.module";
 import * as admin from "firebase-admin";
 import { ValidationPipe } from "@nestjs/common";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
+import { ConfigService } from "@nestjs/config";
+import { HttpExceptionFilter } from "./http-exception.filter";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  const config = new DocumentBuilder()
+  app.useGlobalFilters(new HttpExceptionFilter());
+  const configService: ConfigService = app.get("ConfigService");
+  admin.initializeApp({
+    credential: admin.credential.cert(configService.get<string>("FIREBASE_CREDENTIALS_PATH"))
+  });
+  const swaggerConfig = new DocumentBuilder()
     .addBearerAuth()
     .setTitle("Push test")
     .setDescription("Push test service API description")
     .build();
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, document);
+  const document = SwaggerModule.createDocument(app, swaggerConfig);
+  SwaggerModule.setup("api", app, document);
   app.useGlobalPipes(new ValidationPipe());
-  await app.listen(process.env.PORT || 3000);
-  admin.initializeApp({
-    credential: admin.credential.cert(process.env.FIREBASE_CREDENTIALS_PATH)
-  })
+  await app.listen(parseInt(configService.get<string>("PORT"), 10));
 }
 bootstrap();

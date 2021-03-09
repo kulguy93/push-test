@@ -1,13 +1,15 @@
-import { Controller, Get } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
-import { AppService } from './app.service';
+import { Controller, Get } from "@nestjs/common";
+import { ApiOkResponse, ApiTags } from "@nestjs/swagger";
+import { AppService } from "./app.service";
 
-@ApiTags('root')
+@ApiTags("root")
 @Controller()
 export class AppController {
-  constructor(private readonly appService: AppService) {}
+  constructor(private readonly appService: AppService) {
+  }
 
-  @Get('/version')
+  @Get("/version")
+  @ApiOkResponse({ schema: { properties: { version: { type: "string" } } } })
   getVersion(): object {
     return this.appService.getVersion();
   }

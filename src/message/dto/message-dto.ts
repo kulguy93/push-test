@@ -6,7 +6,7 @@ import MessagingPayload = messaging.MessagingPayload;
 export class MessageDto {
   @IsArray()
   @IsNotEmpty()
-  @ApiProperty()
+  @ApiProperty({ type: "array", items: { type: "number" } })
   deviceTokenIds: number[];
 
   @IsNotEmptyObject()
@@ -15,7 +15,7 @@ export class MessageDto {
     type: "object",
     properties: {
       data: { type: "object" },
-      payload: {
+      notification: {
         type: "object",
         properties: { title: { type: "string" }, body: { type: "string" }, tag: { type: "string" } }
       }

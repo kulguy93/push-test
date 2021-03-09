@@ -1,8 +1,9 @@
 import { Test, TestingModule } from "@nestjs/testing";
-import { INestApplication } from "@nestjs/common";
+import { INestApplication, ValidationPipe } from "@nestjs/common";
 import * as request from "supertest";
 import { AppModule } from "../src/app.module";
-import * as crypto from "crypto";
+import * as admin from "firebase-admin";
+import { HttpExceptionFilter } from "../src/http-exception.filter";
 
 describe("Push test (e2e)", () => {
   let app: INestApplication;
@@ -13,10 +14,15 @@ describe("Push test (e2e)", () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
+    app.useGlobalFilters(new HttpExceptionFilter());
+    app.useGlobalPipes(new ValidationPipe());
+    admin.initializeApp({
+      credential: admin.credential.cert(process.env.FIREBASE_CREDENTIALS_PATH)
+    });
     await app.init();
   });
-
-  const randomToken = crypto.randomBytes(12).toString("hex");
+  // TODO: to try the messaging function you should paste your token to someToken variable
+  const someToken = "dwYKUaV9PDCDaVcRX-diRZ:APA91bFdotA0cZ2Ar3UUTl5KyzRw4X53BJ4kO0UEQiYnuD20U6cg55_mQDf8XJ8j1leWYXmT5oCXZynu-cjRMkagpIBL54B-DSBxUbGHsz2ipTbzhTnzOADMaYyP1NcrS1sjxh1mHfl2";
   let date;
   let id;
 
@@ -34,7 +40,7 @@ describe("Push test (e2e)", () => {
     return request(app.getHttpServer())
       .post("/device-token")
       .set("Authorization", `Bearer ${process.env.API_KEY}`)
-      .send({ "token": randomToken })
+      .send({ "token": someToken })
       .expect(201)
       .then((res) => {
         date = res.body.createdAt;
@@ -44,6 +50,7 @@ describe("Push test (e2e)", () => {
   it("POST /device-token - not have required properties", () => {
     return request(app.getHttpServer())
       .post("/device-token")
+      .send({ "foo": "bar" })
       .set("Authorization", `Bearer ${process.env.API_KEY}`)
       .expect(400);
   });
@@ -51,23 +58,23 @@ describe("Push test (e2e)", () => {
     return request(app.getHttpServer())
       .post("/device-token")
       .set("Authorization", `Bearer ${process.env.API_KEY}`)
-      .send({ "token": randomToken })
-      .expect(400);
+      .send({ "token": someToken })
+      .expect(400)
   });
   it("GET /device-token", () => {
     return request(app.getHttpServer())
       .get("/device-token")
       .set("Authorization", `Bearer ${process.env.API_KEY}`)
-      .expect(200, [
-        [{ id: id, token: randomToken, createdAt: date }],
-        1
-      ]);
+      .expect(200, {
+        data: [{ id: id, token: someToken, createdAt: date }],
+        totalCount: 1
+      });
   });
   it("GET /device-token/:id", () => {
     return request(app.getHttpServer())
       .get(`/device-token/${id}`)
       .set("Authorization", `Bearer ${process.env.API_KEY}`)
-      .expect(200, { id: id, token: randomToken, createdAt: date });
+      .expect(200, { id: id, token: someToken, createdAt: date });
   });
   it("POST /message", () => {
     return request(app.getHttpServer())
@@ -75,7 +82,7 @@ describe("Push test (e2e)", () => {
       .set("Authorization", `Bearer ${process.env.API_KEY}`)
       .send({
         "deviceTokenIds": [
-          1
+          id
         ],
         "payload": {
           "notification": {
@@ -85,7 +92,7 @@ describe("Push test (e2e)", () => {
           }
         }
       })
-      .expect(201);
+      .expect(201)
   });
   it("POST /message - invalid input data", () => {
     return request(app.getHttpServer())
@@ -97,7 +104,6 @@ describe("Push test (e2e)", () => {
         ],
         "foo": "bar"
       })
-      .expect(400);
   });
   it("DELETE /device-token/:id", () => {
     return request(app.getHttpServer())

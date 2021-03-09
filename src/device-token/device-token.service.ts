@@ -1,13 +1,16 @@
-import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
+import { HttpException, HttpStatus, Injectable, Logger } from "@nestjs/common";
 import { CreateDeviceTokenDto } from "./dto/create-device-token.dto";
 import { In, Repository } from "typeorm";
 import { InjectRepository } from "@nestjs/typeorm";
 import { DeviceToken } from "./entities/device-token.entity";
+import { GetDeviceTokensQueryDto } from "./dto/get-device-tokens-query.dto";
 
 @Injectable()
 export class DeviceTokenService {
   constructor(@InjectRepository(DeviceToken) private deviceTokenRepository: Repository<DeviceToken>) {
   }
+
+  private readonly logger = new Logger(DeviceTokenService.name);
 
   async create(createDeviceTokenDto: CreateDeviceTokenDto): Promise<DeviceToken> {
     const deviceToken = new DeviceToken();
@@ -15,31 +18,49 @@ export class DeviceTokenService {
     if (createDeviceTokenDto.createdAt) {
       deviceToken.createdAt = createDeviceTokenDto.createdAt;
     }
-    return this.deviceTokenRepository.save(deviceToken).catch((e) => {
-      throw new HttpException({
-        message: e.message
-      }, HttpStatus.BAD_REQUEST);
+    const existingDeviceToken = await this.deviceTokenRepository.findOne({
+      where: [{
+        token: deviceToken.token
+      }]
     });
+    if (existingDeviceToken) {
+      throw new HttpException({ message: `Device token ${deviceToken.token} is already registered` }, HttpStatus.BAD_REQUEST);
+    }
+    return this.deviceTokenRepository.save(deviceToken);
   }
 
-  findAll(limit: number = 1000, offset: number = 0, tokensArray?: string[]): Promise<[DeviceToken[], number]> {
+  findAll(query: GetDeviceTokensQueryDto): Promise<[DeviceToken[], number]> {
+    let limit = query.limit;
     if (limit > 1000) {
       limit = 1000;
     }
+    let tokensArray;
+    if (query.tokens) {
+      tokensArray = query.tokens.split(",");
+    }
     return this.deviceTokenRepository.findAndCount({
-      skip: offset,
+      skip: query.offset,
       take: limit,
-      where: tokensArray && tokensArray[0] ? [{
+      where: tokensArray ? [{
         token: In(tokensArray)
       }] : []
     });
   }
 
   findOne(id: number): Promise<DeviceToken> {
-    return  this.deviceTokenRepository.findOne(id);
+    const logger = this.logger;
+    return this.deviceTokenRepository.findOneOrFail(id).catch((e) => {
+      logger.error(e.stack);
+      throw new HttpException({ message: `Failed to find device token by id ${id}` }, HttpStatus.NOT_FOUND);
+    });
   }
 
   async remove(id: number): Promise<void> {
-    await this.deviceTokenRepository.delete(id);
+    const logger = this.logger;
+    const relatedDeviceToken = await this.deviceTokenRepository.findOneOrFail(id).catch((e) => {
+      logger.error(e.stack);
+      throw new HttpException({ message: `Failed to remove device token by id ${id}` }, HttpStatus.NOT_FOUND);
+    });
+    await this.deviceTokenRepository.remove(relatedDeviceToken);
   }
 }

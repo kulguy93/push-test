@@ -1,5 +1,5 @@
-import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
-import * as admin from 'firebase-admin';
+import { HttpException, HttpStatus, Injectable, Logger } from "@nestjs/common";
+import * as admin from "firebase-admin";
 import { InjectRepository } from "@nestjs/typeorm";
 import { DeviceToken } from "../device-token/entities/device-token.entity";
 import { Repository } from "typeorm";
@@ -10,23 +10,23 @@ import MessagingPayload = messaging.MessagingPayload;
 export class MessageService {
   constructor(@InjectRepository(DeviceToken) private deviceTokenRepository: Repository<DeviceToken>) {
   }
+
+  private readonly logger = new Logger(MessageService.name);
   async sendMessage(deviceTokenIds: number[], payload: MessagingPayload): Promise<void> {
-    try {
-      if (!deviceTokenIds[0]) {
-        return;
-      }
-      const deviceTokens = await this.deviceTokenRepository.findByIds(deviceTokenIds);
-      if (!deviceTokens[0]) {
-        return;
-      }
-      const tokensArray = deviceTokens.map((each) => {
-        return each.token;
-      });
-      await admin.messaging().sendToDevice(tokensArray, payload);
-    } catch(e) {
-      throw new HttpException({
-        message: e.message
-      }, HttpStatus.BAD_REQUEST)
+    const logger = this.logger;
+    if (!deviceTokenIds[0]) {
+      throw new HttpException({ message: "No device token ids provided" }, HttpStatus.BAD_REQUEST);
     }
+    const deviceTokens = await this.deviceTokenRepository.findByIds(deviceTokenIds);
+    if (!deviceTokens[0]) {
+      throw new HttpException({ message: "No device tokens found" }, HttpStatus.BAD_REQUEST);
+    }
+    const tokensArray = deviceTokens.map((each) => {
+      return each.token;
+    });
+    await admin.messaging().sendToDevice(tokensArray, payload).catch((err) => {
+      logger.error(err.stack);
+      throw new HttpException({ message: "Failed to send message" }, HttpStatus.INTERNAL_SERVER_ERROR);
+    });
   }
 }

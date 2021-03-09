@@ -41,7 +41,6 @@ class EnvironmentVariables {
 export function configValidate(config: Record<string, unknown>) {
   const validatedConfig = new EnvironmentVariables(config);
   const errors = validateSync(validatedConfig, { skipMissingProperties: false, dismissDefaultMessages: true });
-  console.log(errors);
   if (errors[0]) {
     throw new Error(errors.map((each) => each.toString()).join(", "));
   }
